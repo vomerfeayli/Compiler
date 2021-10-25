@@ -1,0 +1,3 @@
+Var meters, distance; 
+meters := 10; 
+distance := -7+10;
