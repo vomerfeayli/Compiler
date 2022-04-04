@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace Compiler
+namespace Compiler.Models
 {
     public class Token
     {

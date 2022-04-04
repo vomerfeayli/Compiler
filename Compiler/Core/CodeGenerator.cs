@@ -1,0 +1,223 @@
+﻿using Compiler.Extensions;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Compiler.Core
+{
+    public class CodeGenerator
+    {
+        private List<string> rpns;
+        private List<string> generatedCode;
+        private Dictionary<string, double?> variableValue;
+        private Stack<double> stack;
+        private List<string> variables;
+
+        private int STO = 0;
+        private int LOAD = 0;
+        private bool isUnary;
+
+        public CodeGenerator(List<string> rpns, List<string> variables)
+        {
+            this.rpns = rpns;
+            this.variables = variables;
+
+            generatedCode = new List<string>();
+            stack = new Stack<double>();
+            variableValue = new Dictionary<string, double?>();
+        }
+
+        public void Run()
+        {
+            foreach (var rpn in rpns)
+            {
+                GenerateCode(rpn);
+            }
+        }
+
+        public double GetResult()
+        {
+            var variableName = variables[STO - 1];
+
+            var value = variableValue[variableName].Value;
+
+            return value;
+        }
+
+        public List<string> GetGeneratedCode()
+        {
+            return generatedCode;
+        }
+
+        private void GenerateCode(string rpn)
+        {
+            var splitedRpn = rpn.Split(' ');
+
+            for (int i = 0; i < splitedRpn.Length; i++)
+            {
+                var item = splitedRpn[i];
+
+                if (Helper.IsConstant(item))
+                {
+                    LitVariable(item);
+
+                    IsLastElementThenStorage(i, splitedRpn.Length);
+
+                    continue;
+                }
+
+                if (Helper.IsVariable(item))
+                {
+                    LoadVariable(item);
+
+                    continue;
+                }
+
+                if (Helper.IsOperator(item[0]))
+                {
+                    if (item == "+")
+                    {
+                        Add();
+
+                        IsLastElementThenStorage(i, splitedRpn.Length);
+                    }
+
+                    if (item == "-")
+                    {
+                        Subtract();
+
+                        if (!isUnary)
+                        {
+                            IsLastElementThenStorage(i, splitedRpn.Length);
+                        }
+                        else
+                        {
+                            STOAfterMinus();
+                        }
+
+                    }
+
+                    if (item == "*")
+                    {
+                        Multiply();
+
+                        IsLastElementThenStorage(i, splitedRpn.Length);
+                    }
+
+                    if (item == "/")
+                    {
+                        Divide();
+
+                        IsLastElementThenStorage(i, splitedRpn.Length);
+                    }
+                }
+            }
+        }
+
+        private void IsLastElementThenStorage(int iteration, int count)
+        {
+            if (iteration + 1 == count)
+            {
+                STOVariable(variables[STO]);
+            }
+        }
+
+        private void Add()
+        {
+            var secondTerm = stack.Pop();
+            var firstTerm = stack.Pop();
+
+            stack.Push(firstTerm + secondTerm);
+
+            generatedCode.Add($"ADD");
+        }
+
+        private void Subtract()
+        {
+            if (stack.Count == 1)
+            {
+                UnaryOperation();
+                isUnary = true;
+            }
+
+            var secondTerm = stack.Pop();
+            var firstTerm = stack.Pop();
+
+            stack.Push(firstTerm - secondTerm);
+
+            generatedCode.Add($"SUB");
+        }
+
+        private void Multiply()
+        {
+            var secondTerm = stack.Pop();
+            var firstTerm = stack.Pop();
+
+            stack.Push(firstTerm * secondTerm);
+
+            generatedCode.Add($"MUL");
+        }
+
+        private void Divide()
+        {
+            var secondTerm = stack.Pop();
+            var firstTerm = stack.Pop();
+
+            stack.Push(firstTerm / secondTerm);
+
+            generatedCode.Add($"DIV");
+        }
+
+        private void LoadVariable(string variable)
+        {
+            LOAD++;
+
+            var value = variableValue[variable].Value;
+
+            stack.Push(value);
+
+            generatedCode.Add($"LOAD {LOAD}");
+        }
+
+        private void UnaryOperation()
+        {
+            var variableName = variables[LOAD];
+
+            STOVariable(variableName);
+
+            stack.Push(0);
+
+            generatedCode.Add($"LOAD 0");
+            LoadVariable(variableName);
+        }
+
+        private void LitVariable(string value)
+        {
+            var variable = double.Parse(value);
+
+            stack.Push(variable);
+
+            generatedCode.Add($"LIT {variable}");
+        }
+
+        private void STOVariable(string variableName)
+        {
+            STO++;
+
+            var value = stack.Pop();
+
+            variableValue.Add(variableName, value);
+
+            generatedCode.Add($"STO {STO}");
+        }
+
+        private void STOAfterMinus()
+        {
+            var value = stack.Pop();
+
+            var variableName = variables[LOAD - 1];
+            variableValue[variableName] = value;
+
+            generatedCode.Add($"STO {STO}");
+        }
+    }
+}

@@ -1,4 +1,4 @@
-﻿namespace Compiler
+﻿namespace Compiler.Models
 {
     public class TokenType
     {
