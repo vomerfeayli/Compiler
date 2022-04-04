@@ -1,6 +1,4 @@
-﻿using Compiler.Extensions;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 
 namespace Compiler.Core
 {
@@ -55,6 +53,16 @@ namespace Compiler.Core
             return generatedCode;
         }
 
+        private bool IsConstant(string s)
+        {
+            if (double.TryParse(s, out var _))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         private void GenerateCode(string rpn)
         {
             var splitedRpn = rpn.Split(' ');
@@ -63,7 +71,7 @@ namespace Compiler.Core
             {
                 var item = splitedRpn[i];
 
-                if (Helper.IsConstant(item))
+                if (IsConstant(item))
                 {
                     LitVariable(item);
 
@@ -72,14 +80,14 @@ namespace Compiler.Core
                     continue;
                 }
 
-                if (Helper.IsVariable(item))
+                if (!IsConstant(item) && "+-/*".IndexOf(item) == -1)
                 {
                     LoadVariable(item);
 
                     continue;
                 }
 
-                if (Helper.IsOperator(item[0]))
+                if ("+-/*".IndexOf(item[0]) != -1)
                 {
                     if (item == "+")
                     {
@@ -199,7 +207,7 @@ namespace Compiler.Core
 
             stack.Push(value);
 
-            generatedCode.Add($"LOAD {LOAD}");
+            generatedCode.Add($"LOAD {LOAD + 1}");
         }
 
         private void LitVariable(string value)
@@ -226,7 +234,7 @@ namespace Compiler.Core
         {
             var value = stack.Pop();
 
-            var variableName = variables[LOAD - 1];
+            var variableName = variables[LOAD];
             variableValue[variableName] = value;
 
             generatedCode.Add($"STO {STO}");
