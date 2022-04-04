@@ -26,6 +26,9 @@ namespace Compiler.Core
             variableValue = new Dictionary<string, double?>();
         }
 
+        /// <summary>
+        /// Запустить генератор кода.
+        /// </summary>
         public void Run()
         {
             foreach (var rpn in rpns)
@@ -34,15 +37,19 @@ namespace Compiler.Core
             }
         }
 
-        public double GetResult()
+        /// <summary>
+        /// Получить результат вычислений.
+        /// </summary>
+        /// <returns></returns>
+        public Dictionary<string, double?> GetResult()
         {
-            var variableName = variables[STO - 1];
-
-            var value = variableValue[variableName].Value;
-
-            return value;
+            return variableValue;
         }
 
+        /// <summary>
+        /// Получить сгенерированный код.
+        /// </summary>
+        /// <returns></returns>
         public List<string> GetGeneratedCode()
         {
             return generatedCode;
@@ -187,7 +194,12 @@ namespace Compiler.Core
             stack.Push(0);
 
             generatedCode.Add($"LOAD 0");
-            LoadVariable(variableName);
+
+            var value = variableValue[variableName].Value;
+
+            stack.Push(value);
+
+            generatedCode.Add($"LOAD {LOAD}");
         }
 
         private void LitVariable(string value)

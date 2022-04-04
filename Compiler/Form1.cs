@@ -30,7 +30,17 @@ namespace Compiler
 
         private void LoadProgramCode_Click(object sender, EventArgs e)
         {
+            var filePath = "";
 
+            if (openFileDialog1.ShowDialog() == DialogResult.OK)
+            {
+                filePath = openFileDialog1.FileName;
+            }
+
+            using (var sr = new StreamReader(filePath))
+            {
+                TextConsole.Text = sr.ReadToEnd();
+            }
         }
 
         private void runProgram_Click(object sender, EventArgs e)
@@ -75,7 +85,10 @@ namespace Compiler
                         }
                     }
 
-                    outputBox.Text += codeGenerator.GetResult();
+                    foreach (var result in codeGenerator.GetResult())
+                    {
+                        outputBox.Text += $"{result.Key} := {result.Value}\n";
+                    }
 
                     var bindingList = new BindingList<Token>(tokens);
                     dataGridView1.DataSource = new BindingSource(bindingList, null);
